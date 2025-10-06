@@ -25,7 +25,7 @@ The project isn't finished yet, so resources are missing or best practises haven
 
 ## About the purpose of the project 🔍
 
-I started my cloud journey at the start of 2024, since then, I have been working in the cloud and I absolutely love it!
+I started my cloud journey at the start of 2025, since then, I have been working in the cloud and I absolutely love it!
 
 What scared me at first, was the enormous number of Buzzwords you'll hear once you dive in a bit deeper. Two of them were "IaC" and "Azure Landing Zones"
 
@@ -43,7 +43,7 @@ Everything comes down to the `main.bicep` file which is the "heart" of the proje
 To find all modules that are currently available, I will create a separate `.md` file that will list them all. You'll just pick your module, add the necessary parameters to the `.bicepparam` file/s and you're good to go!
 
 ### Types 🦾
-I want to avoid having tons of parameters in the module files, thats why I created user defined types whenever it makes sense. This helps to create a clean codebase that also prevents you from omitting necessary parameters, using wrong formats and so on.
+I want to avoid having tons of parameters in the module files, thats why I create user defined types whenever it makes sense. This helps to create a clean codebase that also prevents you from omitting necessary parameters, using wrong formats and so on.
 
 You can have a look at all my custom types (exported or not) inside the `\types` folder. I will create a separate `.md` file for this section also.
 
