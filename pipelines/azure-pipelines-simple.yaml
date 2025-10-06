@@ -1,0 +1,29 @@
+trigger: none
+
+name: 'Deploy infrastructure'
+
+variables:
+  - name: 'azureServiceConnection'
+    value: 'yourServiceConnection' # replace with your actual service connection
+  - name: 'templateFile'
+    value: '../main.bicep'
+  - name: 'parameterFile'
+    value: '../parameters/parameters.dev.bicepparam' # TODO for development: dynamic parameters for environment - also in simple pipeline
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+  - job: Deploy
+    steps:
+      - task: 'AzureCLI@2'
+        displayName: 'Deploy infrastructure'
+        inputs:
+          azureSubscription: $(azureServiceConnection)
+          scriptType: 'Bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az deployment sub create \
+            --location westeurope \
+            --template-file $(templateFile) \
+            --parameters $(parameterFile)

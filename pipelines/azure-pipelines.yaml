@@ -1,0 +1,81 @@
+trigger: none
+
+name: 'Deploy infrastructure'
+
+variables:
+  - name: 'azureServiceConnection'
+    value: 'yourServiceConnection' # replace with your actual service connection
+  - name: 'templateFile'
+    value: '../main.bicep'
+  - name: 'parameterFilePath'
+    value: '../parameters/parameters'
+
+parameters:
+  - name: environment # TODO: dynamic parameters based on branch
+    default: dev
+    values:
+      - dev
+      - stage
+      - prod
+
+stages:
+  - stage: DeployIaCLandingZone
+    displayName: Infrastructure Deployment (Platform and Application)
+    jobs:
+      - deployment: DeployLandingZoneInfra
+        displayName: Deploy Landing Zone Infrastructure
+        pool:
+          name: 'ubuntu-latest'
+        environment:
+          name: ${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: Bash@3
+                  displayName: Create a deployment name
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                        DEPLOYMENTNAME="landingZone-infra-$(date '+%Y-%m-%d%H-%M-%S')"
+                        echo "##vso[task.setvariable variable=deploymentName;]$DEPLOYMENTNAME"
+                        echo "The name of the deployment is $DEPLOYMENTNAME"
+                - task: AzureCLI@2
+                  displayName: Install the Bicep CLI
+                  inputs:
+                    azureSubscription: ${{ variables.azureServiceConnection }}
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                        az bicep uninstall
+                        az config set bicep.use_binary_from_path=false
+                        az bicep Install
+                        az bicep version
+                - task: AzureCLI@2
+                  displayName: Lint Bicep
+                  name: bicepLint
+                  inputs:
+                    azureSubscription: ${{ variables.azureServiceConnection }}
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    addSpnToEnvironment: true
+                    inlineScript: |
+                        echo $(deploymentName)
+                        az deployment sub validate --name $(deploymentName) --location ${{ variables.location }} --template-file ${{ variables.templateFile }} --parameters ${{ variables.parameterFilePath }}.${{ parameters.environment }}.bicepparam
+                - task: AzureCLI@2
+                  displayName: Deploy Infra and save output as artifact
+                  name: bicepDeploy
+                  inputs:
+                    failOnStandardError: true
+                    azureSubscription: ${{ variables.azureServiceConnection }}
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                        echo $(deploymentName)
+                        DEPLOYMENTOUTPUT=$(az deployment sub create --name $(deploymentName) --location ${{ variables.location }} --template-file ${{ variables.templateFile }} --parameters ${{ variables.parameterFilePath }}.${{ parameters.environment }}.bicepparam --query "properties.outputs")
+
+                        echo $DEPLOYMENTOUTPUT > bicepOutput.json
+
+                - publish: bicepOutput.json
+                  artifact: bicepOutput.json
